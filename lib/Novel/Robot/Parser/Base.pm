@@ -24,7 +24,7 @@ sub detect_site_by_url {
     my $site =
           ( $url =~ m#^http://www\.jjwxc\.net/# )  ? 'Jjwxc'
         : ( $url =~ m#^http://www\.dddbbb\.net/# ) ? 'Dddbbb'
-        :                                            '';
+        :                                            'Base';
     
     return $site;
 }
