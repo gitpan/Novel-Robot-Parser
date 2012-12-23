@@ -16,4 +16,4 @@ requires:
   HTML::TableExtract: 2.11
   Moo: 1.000007
   Web::Scraper: 0.37
-version: 0.01
+version: 0.02

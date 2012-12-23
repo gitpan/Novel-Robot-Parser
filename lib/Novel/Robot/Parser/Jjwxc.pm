@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use utf8;
 use Moo;
-extends 'Novel::Robot::Parser';
+extends 'Novel::Robot::Parser::Base';
 use HTML::TableExtract qw/tree/;
 use Web::Scraper;
 use Encode;
