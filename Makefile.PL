@@ -24,7 +24,7 @@ my %WriteMakefileArgs = (
     "Moo" => "1.000007",
     "Web::Scraper" => "0.37"
   },
-  "VERSION" => "0.03",
+  "VERSION" => "0.04",
   "test" => {
     "TESTS" => ""
   }

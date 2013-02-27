@@ -3,6 +3,7 @@ MANIFEST
 META.yml
 Makefile.PL
 README
+README.md
 dist.ini
 lib/Novel/Robot/Parser.pm
 lib/Novel/Robot/Parser/Base.pm
