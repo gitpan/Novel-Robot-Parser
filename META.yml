@@ -13,7 +13,10 @@ meta-spec:
   version: 1.4
 name: Novel-Robot-Parser
 requires:
+  Encode::Detect::CJK: v2.0.2
+  Encode::Locale: 1.03
+  File::Find::Rule: 0.33
   HTML::TableExtract: 2.11
   Moo: 1.000007
   Web::Scraper: 0.37
-version: 0.05
+version: 0.06

@@ -20,11 +20,14 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Novel::Robot::Parser",
   "PREREQ_PM" => {
+    "Encode::Detect::CJK" => "v2.0.2",
+    "Encode::Locale" => "1.03",
+    "File::Find::Rule" => "0.33",
     "HTML::TableExtract" => "2.11",
     "Moo" => "1.000007",
     "Web::Scraper" => "0.37"
   },
-  "VERSION" => "0.05",
+  "VERSION" => "0.06",
   "test" => {
     "TESTS" => ""
   }
