@@ -23,11 +23,12 @@ my %WriteMakefileArgs = (
     "Encode::Detect::CJK" => "v2.0.2",
     "Encode::Locale" => "1.03",
     "File::Find::Rule" => "0.33",
+    "HTML::ElementTable" => 0,
     "HTML::TableExtract" => "2.11",
     "Moo" => "1.000007",
     "Web::Scraper" => "0.37"
   },
-  "VERSION" => "0.06",
+  "VERSION" => "0.07",
   "test" => {
     "TESTS" => ""
   }
