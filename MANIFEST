@@ -9,4 +9,5 @@ lib/Novel/Robot/Parser.pm
 lib/Novel/Robot/Parser/Base.pm
 lib/Novel/Robot/Parser/Dddbbb.pm
 lib/Novel/Robot/Parser/Jjwxc.pm
+lib/Novel/Robot/Parser/Shunong.pm
 lib/Novel/Robot/Parser/TXT.pm
