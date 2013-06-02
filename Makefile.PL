@@ -20,20 +20,34 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Novel::Robot::Parser",
   "PREREQ_PM" => {
-    "Encode::Detect::CJK" => "v2.0.2",
-    "Encode::Locale" => "1.03",
-    "File::Find::Rule" => "0.33",
+    "Encode::Detect::CJK" => 0,
+    "Encode::Locale" => 0,
+    "File::Find::Rule" => 0,
     "HTML::ElementTable" => 0,
-    "HTML::TableExtract" => "2.11",
-    "Moo" => "1.000007",
-    "Web::Scraper" => "0.37"
+    "HTML::TableExtract" => 0,
+    "Moo" => 0,
+    "Web::Scraper" => 0
   },
-  "VERSION" => "0.08",
+  "TEST_REQUIRES" => {},
+  "VERSION" => "0.09",
   "test" => {
     "TESTS" => ""
   }
 );
 
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
+  my $tr = delete $WriteMakefileArgs{TEST_REQUIRES};
+  my $br = $WriteMakefileArgs{BUILD_REQUIRES};
+  for my $mod ( keys %$tr ) {
+    if ( exists $br->{$mod} ) {
+      $br->{$mod} = $tr->{$mod} if $tr->{$mod} > $br->{$mod};
+    }
+    else {
+      $br->{$mod} = $tr->{$mod};
+    }
+  }
+}
 
 unless ( eval { ExtUtils::MakeMaker->VERSION(6.56) } ) {
   my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};
