@@ -1,4 +1,15 @@
-#ABSTRACT: 努努书坊的解析模块
+#ABSTRACT: 努努书坊的解析模块 http://book.kanunu.org
+=pod
+
+=encoding utf8
+
+=head1 FUNCTION
+
+=head2 parse_index
+
+=head2 parse_chapter
+
+=cut
 package Novel::Robot::Parser::Nunu;
 use strict;
 use warnings;
@@ -23,29 +34,16 @@ sub parse_index {
             'title' => 'TEXT',
             'url'   => '@href'
           };
+          process_first '//h2//b' , 'book' => 'TEXT';
+          process_first '//font//strong' , 'writer' => 'TEXT';
     };
 
     my $ref = $parse_index->scrape($html_ref);
 
-    @{$ref}{qw/book writer/} =
-      $$html_ref =~ m#<title>(.+?) - (.+?) - 小说在线阅读#s;
+    $ref->{writer}=~s/作品集.*//s;
+    $ref->{writer}=~s/^→//;
 
-    $ref->{chapter_info} =
-      [ grep { exists $_->{url} } @{ $ref->{chapter_info} } ];
-    $ref->{chapter_num} = scalar( @{ $ref->{chapter_info} } );
-    unshift @{ $ref->{chapter_info} }, undef;
-
-    my ($url) = $$html_ref =~
-      m#上一篇：\s*<a href=['"]/(book[^>]+?/\d+)/index.html['"]>#s;
-    my ($book_id) = $url =~ m#/(\d+)$#;
-    $book_id++;
-    $url =~ s#/(\d+)$#/$book_id#;
-
-    for my $i ( 1 .. $ref->{chapter_num} ) {
-        my $r = $ref->{chapter_info}[$i];
-        $r->{url} = "$self->{base_url}/$url/$r->{url}";
-        $r->{id}  = $i;
-    }
+    $ref->{chapter_info} = [ grep { exists $_->{url} } @{ $ref->{chapter_info} } ];
 
     return $ref;
 } ## end sub parse_index
@@ -55,9 +53,7 @@ sub parse_chapter {
     my ( $self, $html_ref ) = @_;
 
     my $parse_chapter = scraper {
-        process_first '//td[@width="820"]', 'content' => sub {
-            $self->get_inner_html( $_[0] );
-        };
+        process_first '//td[@width="820"]', 'content' => 'HTML';
     };
     my $ref = $parse_chapter->scrape($html_ref);
 

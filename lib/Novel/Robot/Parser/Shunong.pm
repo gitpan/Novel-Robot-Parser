@@ -1,4 +1,15 @@
-#ABSTRACT: 书农的解析模块
+#ABSTRACT: 书农的解析模块 http://www.shunong.com
+=pod
+
+=encoding utf8
+
+=head1 FUNCTION
+
+=head2 parse_index
+
+=head2 parse_chapter
+
+=cut
 package Novel::Robot::Parser::Shunong;
 use strict;
 use warnings;
@@ -32,16 +43,6 @@ sub parse_index {
     $ref->{book}=~s/全文阅读//;
 
     $ref->{chapter_info} = [ grep { exists $_->{url} } @{$ref->{chapter_info}} ];
-    $ref->{chapter_num} = scalar(@{ $ref->{chapter_info} });
-    unshift @{$ref->{chapter_info}}, undef;
-
-    my ($id) = $ref->{index_url}=~m#/(\d+)\D+$#;
-    my $mid = int($id/1000);
-    for my $i (1 .. $ref->{chapter_num}){
-        my $r = $ref->{chapter_info}[$i];
-        $r->{url}="$self->{base_url}/yuedu/$mid/$id/$r->{url}";
-        $r->{id} = $i;
-    }
 
     return $ref;
 } ## end sub parse_index
@@ -53,9 +54,7 @@ sub parse_chapter {
     my $parse_chapter = scraper {
         process_first '.author', 'writer' => 'TEXT';
         process_first 'h2', 'book' => 'TEXT';
-        process_first '//div[@class="bookcontent clearfix"]', 'content' => sub {
-            $self->get_inner_html( $_[0] );
-        };
+        process_first '//div[@class="bookcontent clearfix"]', 'content' => 'HTML';
     };
     my $ref = $parse_chapter->scrape($html_ref);
 

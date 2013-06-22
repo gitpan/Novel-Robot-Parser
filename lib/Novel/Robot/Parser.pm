@@ -4,25 +4,24 @@
 
 =encoding utf8
 
-=head1 DESCRIPTION 
+=head1 支持站点类型
 
-小说解析模块
+见 Nover::Parser:: 系列模块
 
-=head2 支持小说来源
+=head1 FUNCTION
 
-- Jjwxc :  http://www.jjwxc.net
+=head2 init_parser 初始化解析模块
 
-    - 查询：作者，作品
+   my $parser = Novel::Robot::Parser->new();
 
-- Dddbbb : http://www.dddbbb.net
+   my $url = 'http://www.jjwxc.net/onebook.php?novelid=2456';
 
-    - 查询：作者，作品
+   $parser->init_parser($url);
 
-- Shunong : http://www.shunong.com
+	
+   my $site_name = 'Jjwxc';
 
-- Nunu :  http://book.kanunu.org
-
-- TXT : txt文件
+   $parser->init_parser($site_name);
 
 =cut
 package  Novel::Robot::Parser;
@@ -33,11 +32,11 @@ use Novel::Robot::Parser::Shunong;
 use Novel::Robot::Parser::Nunu;
 use Novel::Robot::Parser::TXT;
 
-our $VERSION = 0.09;
+our $VERSION = 0.10;
 
 sub init_parser {
-    my ( $self, $site ) = @_;
-    my $s      = $self->detect_site($site);
+    my ( $self, $url ) = @_;
+    my $s      = $self->detect_site($url);
     my $parser = eval qq[new Novel::Robot::Parser::$s()];
     return $parser;
 } ## end sub init_parser

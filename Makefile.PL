@@ -26,10 +26,11 @@ my %WriteMakefileArgs = (
     "HTML::ElementTable" => 0,
     "HTML::TableExtract" => 0,
     "Moo" => 0,
+    "URI" => 0,
     "Web::Scraper" => 0
   },
   "TEST_REQUIRES" => {},
-  "VERSION" => "0.09",
+  "VERSION" => "0.10",
   "test" => {
     "TESTS" => ""
   }

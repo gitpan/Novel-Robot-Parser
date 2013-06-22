@@ -1,4 +1,24 @@
 #ABSTRACT: TXT的解析模块
+=pod
+
+=encoding utf8
+
+=head1 FUNCTION
+
+=head2 parse_index 解析文本内容
+  
+  my $txt_content_ref = $self->parse_index({
+
+	writer => 'some_writer',
+
+        book => 'some_book',
+
+	path => [ '/somedir/', '/someotherdir/somefile.txt' ], 
+
+   });
+
+
+=cut
 package Novel::Robot::Parser::TXT;
 use strict;
 use warnings;
@@ -76,13 +96,12 @@ sub parse_index {
             my $txt_data_ref = $self->read_single_txt($txt);
             my $txt_file = decode(locale => $txt);
             for my $t (@$txt_data_ref){
-                ++$i;
-                $t->{id} = $i;
+                $t->{id} = ++$i;
                 $t->{url} = $txt_file;
                 $t->{writer} = $data{writer};
                 $t->{book} = $data{book};
 
-                $data{chapter_info}[$i] = $t;
+		push @{$data{chapter_info}}, $t;
             }
         }
     }
