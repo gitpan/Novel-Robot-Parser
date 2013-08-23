@@ -85,7 +85,6 @@ sub parse_index {
 sub parse_book_opf {
     my ( $self, $ref, $html_ref ) = @_;
 
-    my $i = 0;
     my $refine_engine = scraper {
         process '//div[@class="opf"]//a', 'chapter_info[]' => {
             title => 'TEXT', 
@@ -106,7 +105,7 @@ sub parse_chapter {
     $$html_ref=~s#\<img[^>]+dou\.gif[^>]+\>#，#g;
 
     my $parse_chapter = scraper {
-        process '#toplink>a', 'book_info[]' => 'TEXT';
+        process '//div[@id="toplink"]//a', 'book_info[]' => 'TEXT';
         process_first '.mytitle', 'title' => 'TEXT';
         process_first '#content', 'content' => 'HTML';
     };

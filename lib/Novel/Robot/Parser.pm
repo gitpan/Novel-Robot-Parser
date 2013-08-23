@@ -1,29 +1,4 @@
 # ABSTRACT: 小说站点解析引擎
-
-=pod
-
-=encoding utf8
-
-=head1 支持站点类型
-
-见 Nover::Parser:: 系列模块
-
-=head1 FUNCTION
-
-=head2 init_parser 初始化解析模块
-
-   my $parser = Novel::Robot::Parser->new();
-
-   my $url = 'http://www.jjwxc.net/onebook.php?novelid=2456';
-
-   $parser->init_parser($url);
-
-	
-   my $site_name = 'Jjwxc';
-
-   $parser->init_parser($site_name);
-
-=cut
 package  Novel::Robot::Parser;
 use Moo;
 use Novel::Robot::Parser::Dddbbb;
@@ -32,7 +7,7 @@ use Novel::Robot::Parser::Shunong;
 use Novel::Robot::Parser::Nunu;
 use Novel::Robot::Parser::TXT;
 
-our $VERSION = 0.10;
+our $VERSION = 0.11;
 
 sub init_parser {
     my ( $self, $url ) = @_;
