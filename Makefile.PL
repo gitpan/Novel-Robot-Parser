@@ -23,15 +23,13 @@ my %WriteMakefileArgs = (
     "Encode::Detect::CJK" => 0,
     "Encode::Locale" => 0,
     "File::Find::Rule" => 0,
-    "HTML::ElementTable" => 0,
-    "HTML::TableExtract" => 0,
     "Moo" => 0,
     "Novel::Robot::Browser" => 0,
     "URI" => 0,
     "Web::Scraper" => 0
   },
   "TEST_REQUIRES" => {},
-  "VERSION" => "0.11",
+  "VERSION" => "0.12",
   "test" => {
     "TESTS" => ""
   }
