@@ -44,7 +44,16 @@ sub parse_chapter {
     @chap{qw/title content/} =
       $$html_ref =~ m#<h2>(.+?)</h2>(.+?)<div id="favoriteshow.?3"#s;
     return unless ( $chap{content} );
-    $chap{content} =~ s{</?div[^>]+>}{}sg;
+    for($chap{content}){
+        s{</?div[^>]*>}{}sgi;
+        s/^\s*//s;
+        #s{<br\s*/?\s*>}{\n}sgi;
+        #s{<p\s+[^>]*>}{}sgi;
+        #s{<p\s*>}{}sgi;
+        #s{</p>}{\n\n}sgi;
+        #s{\n\n\n*}{\n\n}sg;
+        #s{\S.*?\n}{\n<p>$&</p>}sg;
+    }
 
     @chap{qw/book writer/} = $$html_ref =~ m#<title>《(.+?)》(.+?)　ˇ#s;
 
@@ -155,7 +164,7 @@ sub parse_book_chapter_info {
     my ( $self, $ref, $html_ref ) = @_;
 
     my $s = scraper {
-        process '//tr[@itemprop="chapter"]', 'chap[]' => scraper {
+        process '//tr[@itemtype="http://schema.org/Chapter"]', 'chap[]' => scraper {
             process '//td',      'info[]' => 'TEXT';
             process_first '//a', 'url'    => '@href';
         };

@@ -7,15 +7,12 @@
 
 =head2 parse_index 解析文本内容
   
-  my $txt_content_ref = $self->parse_index({
-
+  my $txt_content_ref = $self->parse_index(
+    [ '/somedir/', '/someotherdir/somefile.txt' ], 
 	writer => 'some_writer',
-
-        book => 'some_book',
-
-	path => [ '/somedir/', '/someotherdir/somefile.txt' ], 
-
-   });
+    book => 'some_book',
+    chapter_regex => qr/(第\d+章)/, 
+   );
 
 
 =cut
@@ -34,9 +31,9 @@ extends 'Novel::Robot::Parser::Base';
 
 
 has '+site'    => ( default => sub {'TXT'} );
-has 'chapter_regex'    => ( 
-    is => 'rw', 
-    default =>  \&get_default_chapter_regex);
+#has 'chapter_regex'    => ( 
+    #is => 'rw', 
+    #default =>  \&get_default_chapter_regex);
 
 sub get_default_chapter_regex { 
     #指定分割章节的正则表达式
@@ -80,25 +77,23 @@ qr/[\d０１２３４５６７８９零○〇一二三四五六七八九十百�
 
 
 sub parse_index {
-    my ($self, $r) = @_;
-    # $r :  writer ,  book ,  path = [ ]
+    my ($self, $path, %opt) = @_;
+    $opt{chapter_regex} ||= get_default_chapter_regex();
 
     my %data;
-    $data{writer} = $r->{writer};
-    $data{book} = $r->{book};
+    $data{writer} = $opt{writer} || 'unknown';
+    $data{book} = $opt{book} || 'unknown';
 
-
-    my $p_ref = ref($r->{path}) eq 'ARRAY' ? $r->{path} : [ $r->{path} ];
+    my $p_ref = ref($path) eq 'ARRAY' ? $path : [ $path ];
     for my $p (@$p_ref){
         my @txts = sort File::Find::Rule->file()->in($p);
         for my $txt (@txts){
-            my $txt_data_ref = $self->read_single_txt($txt);
+            my $txt_data_ref = $self->read_single_txt($txt, %opt);
             my $txt_file = decode(locale => $txt);
             for my $t (@$txt_data_ref){
                 $t->{url} = $txt_file;
                 $t->{writer} = $data{writer};
                 $t->{book} = $data{book};
-
                 push @{$data{chapter_info}}, $t;
             }
         }
@@ -116,7 +111,7 @@ sub parse_index {
 sub read_single_txt {
 
     #读入单个TXT文件
-    my ($self, $txt) = @_;
+    my ($self, $txt, %opt) = @_;
 
     my $charset = $self->detect_file_charset($txt);
     open my $sh, "<:encoding($charset)", $txt;
@@ -127,14 +122,14 @@ sub read_single_txt {
     #第一章
     while (<$sh>) {
         next unless /\S/;
-        $single_toc = /$self->{chapter_regex}/ ? $1 : $_;
+        $single_toc = /$opt{chapter_regex}/ ? $1 : $_;
         last;
     } ## end while (<$sh>)
 
     #后续章节
     while (<$sh>) {
         next unless /\S/;
-        if ( my ($new_single_toc) = /$self->{chapter_regex}/ ) {
+        if ( my ($new_single_toc) = /$opt{chapter_regex}/ ) {
             if ( $single_toc =~ /\S/ and $single_content =~ /\S/s ) {
                 push @data, { title => $single_toc, content => $single_content };
                 $single_toc = '';
