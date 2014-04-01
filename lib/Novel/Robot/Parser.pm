@@ -1,6 +1,6 @@
 # ABSTRACT: 小说站点解析引擎
 package  Novel::Robot::Parser;
-our $VERSION = 0.15;
+our $VERSION = 0.16;
 use Novel::Robot::Browser;
 use URI;
 use Encode;
@@ -57,6 +57,7 @@ sub format_abs_url {
 		next unless($r);
 
 		if(ref($r) eq 'HASH'){
+            next unless($r->{url});
 			$r->{url} = URI->new_abs($r->{url}, $base_url)->as_string;
 		}else{
 			$r = URI->new_abs($r, $base_url)->as_string;
@@ -118,29 +119,36 @@ sub get_book_ref {
 
 sub get_index_ref {
 
-    my ( $self, $index_url , %opt) = @_;
+    my ( $self, $index_url, %opt ) = @_;
 
-    return $self->parse_index($index_url)
-      unless ( $index_url =~ /^http/ );
+    my $ref;
+    unless ( $index_url =~ /^http/ ) {
+        $ref = $self->parse_index($index_url);
+    }
+    else {
+        my $html_ref = $self->{browser}->request_url($index_url);
 
-    my $html_ref = $self->{browser}->request_url($index_url);
+        $ref = $self->parse_index($html_ref);
+        return unless ( defined $ref );
 
-    my $ref = $self->parse_index($html_ref);
-    return unless ( defined $ref );
+        $ref->{index_url} = $index_url;
+        $ref->{site}      = $self->{site};
 
-    $ref->{index_url} = $index_url;
-    $ref->{site}      = $self->{site};
-
-    if ( exists $ref->{more_book_info} ) {
-        $self->format_abs_url( $ref->{more_book_info}, $ref->{index_url} );
-        for my $r ( @{ $ref->{more_book_info} } ) {
-            my $info = $self->{browser}->request_url( $r->{url} );
-            next unless ( defined $info );
-            $r->{function}->( $ref, $info );
+        if ( exists $ref->{more_book_info} ) {
+            $self->format_abs_url( $ref->{more_book_info}, $ref->{index_url} );
+            for my $r ( @{ $ref->{more_book_info} } ) {
+                my $info = $self->{browser}->request_url( $r->{url} );
+                next unless ( defined $info );
+                $r->{function}->( $ref, $info );
+            }
         }
     }
 
-    $opt{index_sub}->($ref) if(exists $opt{index_sub});
+    $opt{index_sub}->($ref) if ( exists $opt{index_sub} );
+
+    for my $k (qw/book writer/){
+        $ref->{$k}= $self->format_string($ref->{$k});
+    }
 
     $self->update_chapter_id($ref);
     $self->update_chapter_num($ref);
@@ -148,6 +156,13 @@ sub get_index_ref {
 
     return $ref;
 } ## end sub get_index_ref
+
+sub format_string {
+    my ($self, $s) = @_;
+    $s=~s/[\*\/\\\[\(\)]+//g;
+    $s=~s/[\]\s+]/-/g;
+    $s;
+}
 
 sub get_chapter_ref {
     my ( $self, $chap_url, %opt ) = @_;
@@ -157,7 +172,7 @@ sub get_chapter_ref {
 
     my $null_chapter_ref = {
         content => '',
-        title   => '[空]',
+        title   => '章节为空',
         id      => $opt{id} || 1,
     };
     return $null_chapter_ref unless ($ref);

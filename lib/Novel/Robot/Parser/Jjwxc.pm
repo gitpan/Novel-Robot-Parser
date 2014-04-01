@@ -60,16 +60,18 @@ sub parse_index {
     return if ( $$html_ref =~ /自动进入被锁文章的作者专栏/ );
 
     my $parse_index = scraper {
-        process_first '.cytable>tbody>tr>td.sptd>span.bigtext',
+        process_first '//h1[@itemprop="name"]',
           'book' => 'TEXT';
-        process_first '.cytable>tbody>tr>.sptd>h2>a',
-          'writer'     => 'TEXT',
+        process_first '//h2/a',
           'writer_url' => '@href';
+        process_first '//span[@itemprop="author"]',
+          'writer'     => 'TEXT';
         process_first '.readtd>.smallreadbody',
           'intro' => sub { $self->get_book_intro(@_); };
     };
 
     my $ref = $parse_index->scrape($html_ref);
+
     ( $ref->{series} ) =
       $$html_ref =~ m{<span>所属系列：</span>(.*?)</li>}s;
     ( $ref->{progress} ) =

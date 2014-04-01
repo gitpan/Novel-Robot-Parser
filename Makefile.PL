@@ -29,7 +29,7 @@ my %WriteMakefileArgs = (
     "Web::Scraper" => 0
   },
   "TEST_REQUIRES" => {},
-  "VERSION" => "0.15",
+  "VERSION" => "0.16",
   "test" => {
     "TESTS" => ""
   }

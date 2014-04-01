@@ -20,4 +20,4 @@ requires:
   Novel::Robot::Browser: 0
   URI: 0
   Web::Scraper: 0
-version: 0.15
+version: 0.16
