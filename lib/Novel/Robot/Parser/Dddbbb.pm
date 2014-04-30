@@ -3,9 +3,11 @@
 
 =encoding utf8
 
-=head1 支持查询类型 query type
+=head1 支持的查询类型
 
-  作品，作者，主角，系列
+  #$type：作品，作者，主角，系列
+  
+  $parser->make_query_request( $type, $keyword );
 
 =cut
 package Novel::Robot::Parser::Dddbbb;

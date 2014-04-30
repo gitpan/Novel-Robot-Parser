@@ -1,11 +1,13 @@
-#ABSTRACT: 绿晋江的解析模块 http://www.jjwxc.net
+#ABSTRACT: 绿晋江 http://www.jjwxc.net
 =pod
 
 =encoding utf8
 
-=head1  支持查询类型 query type
+=head1  支持查询类型
 
-  作品，作者，主角，配角，其他
+  #$type：作品，作者，主角，配角，其他
+  
+  $parser->make_query_request( $type, $keyword );
 
 =cut
 
