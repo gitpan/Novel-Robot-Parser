@@ -16,8 +16,7 @@ requires:
   Encode::Detect::CJK: 0
   Encode::Locale: 0
   File::Find::Rule: 0
-  Moo: 0
   Novel::Robot::Browser: 0
   URI: 0
   Web::Scraper: 0
-version: 0.17
+version: 0.18

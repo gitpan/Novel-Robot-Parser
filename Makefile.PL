@@ -24,13 +24,12 @@ my %WriteMakefileArgs = (
     "Encode::Detect::CJK" => 0,
     "Encode::Locale" => 0,
     "File::Find::Rule" => 0,
-    "Moo" => 0,
     "Novel::Robot::Browser" => 0,
     "URI" => 0,
     "Web::Scraper" => 0
   },
   "TEST_REQUIRES" => {},
-  "VERSION" => "0.17",
+  "VERSION" => "0.18",
   "test" => {
     "TESTS" => ""
   }
@@ -41,7 +40,6 @@ my %FallbackPrereqs = (
   "Encode::Detect::CJK" => 0,
   "Encode::Locale" => 0,
   "File::Find::Rule" => 0,
-  "Moo" => 0,
   "Novel::Robot::Browser" => 0,
   "URI" => 0,
   "Web::Scraper" => 0
