@@ -1,11 +1,10 @@
 #ABSTRACT: 爱尚小说 http://www.23hh.com
-package Novel::Robot::Parser::Asxs;
+package Novel::Robot::Parser::asxs;
 use strict;
 use warnings;
 use utf8;
 
 use base 'Novel::Robot::Parser';
-
 use Web::Scraper;
 
 our $BASE_URL = 'http://www.23hh.com';
@@ -20,7 +19,7 @@ sub parse_index {
 
     my $parse_index = scraper {
         process '//table[@id="at"]//td[@class="L"]//a',
-          'chapter_info[]' => {
+          'chapter_list[]' => {
             'title' => 'TEXT',
             'url'   => '@href'
           };
@@ -33,8 +32,8 @@ sub parse_index {
     $ref->{writer}=~s/作者：//;
     $ref->{book}=~s/\s*最新章节\s*$//;
 
-    $ref->{chapter_info} = [
-        grep { $_->{url} } @{ $ref->{chapter_info} }
+    $ref->{chapter_list} = [
+        grep { $_->{url} } @{ $ref->{chapter_list} }
     ];
 
     return $ref;

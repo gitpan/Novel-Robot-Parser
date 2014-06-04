@@ -1,14 +1,43 @@
 # ABSTRACT: get novel content from website 小说站点解析引擎
 package  Novel::Robot::Parser;
-our $VERSION = 0.18;
 use Novel::Robot::Browser;
 use URI;
 use Encode;
 
+our $VERSION    = 0.19;
+
+our %NULL_INDEX = (
+    url          => '',
+    book         => '',
+    writer       => '',
+    writer_url   => '',
+    chapter_list => [],
+
+    intro    => '',
+    series   => '',
+    progress => '',
+    word_num => '',
+);
+
+our %NULL_CHAPTER = (
+    content    => '',
+    id         => 0,
+    pid        => 0,
+    time       => '',
+    title      => '章节为空',
+    url        => '',
+    writer     => '',
+    writer_say => '',
+    abstract   => '',
+    word_num   => '',
+    type       => '',
+);
+
+
 sub new {
     my ( $self, %opt ) = @_;
 
-    $opt{site} = $self->detect_site( $opt{site} ) || 'Jjwxc';
+    $opt{site} = $self->detect_site( $opt{site} ) || 'jjwxc';
     my $module = "Novel::Robot::Parser::$opt{site}";
 
     my $browser = Novel::Robot::Browser->new(%opt);
@@ -18,22 +47,316 @@ sub new {
 
 } ## end sub init_parser
 
+
 sub detect_site {
     my ( $self, $url ) = @_;
     return $url unless ( $url =~ /^http/ );
 
     my $site =
-        ( $url =~ m#^http://www\.jjwxc\.net/# )   ? 'Jjwxc'
-      : ( $url =~ m#^http://www\.dddbbb\.net/# )  ? 'Dddbbb'
-      : ( $url =~ m#^http://www\.shunong\.com/# ) ? 'Shunong'
-      : ( $url =~ m#^http://book\.kanunu\.org/# ) ? 'Nunu'
-      : ( $url =~ m#^http://www\.23hh\.com/# )    ? 'Asxs'
-      : ( $url =~ m#^\Qhttp://www.luoqiu.com/# )  ? 'Luoqiu'
-      : ( $url =~ m#^\Qhttp://www.23us.com/# )    ? 'Dingdian'
-      :                                             'Base';
+        ( $url =~ m#^http://www\.jjwxc\.net/# )   ? 'jjwxc'
+      : ( $url =~ m#^http://www\.dddbbb\.net/# )  ? 'dddbbb'
+      : ( $url =~ m#^http://www\.shunong\.com/# ) ? 'shunong'
+      : ( $url =~ m#^http://book\.kanunu\.org/# ) ? 'kanunu'
+      : ( $url =~ m#^http://www\.23hh\.com/# )    ? 'asxs'
+      : ( $url =~ m#^\Qhttp://www.luoqiu.com/# )  ? 'luoqiu'
+      : ( $url =~ m#^\Qhttp://www.23us.com/# )    ? 'dingdian'
+      : ( $url =~ m#^\Qhttp://read.qidian.com/# ) ? 'qidian'
+      : ( $url =~ m#^\Qhttp://www.snwx.com/# )    ? 'snwx'
+      : ( $url =~ m#^http://bbs\.jjwxc\.net/# )   ? 'hjj'
+      : ( $url =~ m#^\Qhttp://tieba.baidu.com/# ) ? 'tieba'
+      :                                             'unknown';
 
     return $site;
 } ## end sub detect_site
+
+sub site_type { 'novel' }
+sub base_url { }
+
+sub get_item_ref {
+    my ( $self, $index_url, %o ) = @_;
+    my $bt   = $self->site_type();
+    my $name = "get_${bt}_ref";
+    $self->$name( $index_url, %o );
+}
+
+sub get_novel_ref {
+    my ( $self, $index_url, %o ) = @_;
+
+    my $r = $self->get_index_ref( $index_url, %o );
+    return unless ($r);
+
+    $r->{floor_list} = $self->{browser}->request_urls(
+        $r->{chapter_list},
+        %o,
+        select_url_sub => sub {
+            my ($arr) = @_;
+            $self->select_list_range( $arr, 
+                $o{min_chapter_num},
+                $o{max_chapter_num} );
+        },
+        data_sub            => sub { $self->get_chapter_ref(@_); },
+        no_auto_request_url => 1,
+    );
+
+    return $r;
+}
+
+sub get_index_ref {
+    my ( $self, $url, %opt ) = @_;
+
+    my $r;
+    if ( $url and $url !~ /^http/ ) {
+        $r = $self->parse_index( $url, %opt );
+    }
+    else {
+        my $html = $self->{browser}->request_url($url);
+        $r = $self->parse_index( \$html, %opt ) || {};
+        $r->{chapter_list} ||= $self->parse_chapter_list( $r, \$html ) || [];
+        $r->{url} = $url;
+    }
+
+    $r->{$_} ||= $NULL_INDEX{$_} for keys(%NULL_INDEX);
+    $self->format_hashref_string( $r, $_ ) for qw/writer book/;
+    $r->{chapter_num}  = $self->update_url_list($r->{chapter_list}, $r->{url});
+
+    $r->{writer_url} = $self->format_abs_url( $r->{writer_url}, $base_url );
+
+    return $r;
+} ## end sub get_index_ref
+
+sub parse_index   { }
+
+sub get_chapter_ref {
+    my ( $self, $src ) = @_;
+
+    $src = { url => $src || '' } if ( ref($src) ne 'HASH' );
+    my %m = ( %NULL_CHAPTER, %$src );
+    my $html = $self->{browser}->request_url( $src->{url} );
+
+    my $r = $self->parse_chapter( \$html ) || {};
+
+    $r->{$_} ||= $m{$_} for keys(%m);
+    $self->tidy_chapter_content($r);
+
+    return $r;
+} ## end sub get_chapter_ref
+
+sub parse_chapter { }
+
+sub get_tiezi_ref {
+    my ( $self, $url, %o ) = @_;
+
+    my $items_sub = $self->get_items_sub( 'tiezi', 'floor' );
+    my ( $topic, $floor_list ) = $items_sub->( $url, %o );
+
+    unshift @$floor_list, $topic if ( $topic->{content} );
+    my %r = (
+        %$topic,
+        book       => $topic->{title},
+        url        => $url,
+        floor_list => $floor_list,
+    );
+    $self->update_floor_list( \%r, %o );
+
+    return \%r;
+} ## end sub get_tiezi_ref
+
+sub parse_tiezi {}
+sub parse_tiezi_items  { }
+sub parse_tiezi_urls  { }
+
+sub get_board_ref {
+    my ( $self, $url, %o ) = @_;
+
+    my $items_sub = $self->get_items_sub( 'board', 'item' );
+
+    my ( $topic, $item_list ) = $items_sub->( $url, %o );
+
+    $self->update_url_list($item_list, $url);
+
+    return ( $topic, $item_list );
+} ## end sub get_tiezi_ref
+
+sub parse_board  { }
+sub parse_board_items  { }
+sub parse_board_urls  { }
+
+sub get_items_sub {
+    my ( $self, $class, $item ) = @_;
+
+    my $info_sub_name      = "parse_$class";
+    my $data_list_sub_name = "parse_${class}_${item}s";
+    my $url_list_sub_name  = "parse_${class}_urls";
+
+    my $items_sub = sub {
+        my ( $url, %o ) = @_;
+
+        my ( $title, $item_list ) = $self->{browser}->request_urls_iter(
+            $url,
+            post_data     => $o{post_data},
+            info_sub      => sub { $self->$info_sub_name(@_) },
+            data_list_sub => sub { $self->$data_list_sub_name(@_) },
+            stop_sub      => sub {
+                my ( $info, $data_list ) = @_;
+                $self->is_list_overflow( $data_list,
+                    $o{"max_${class}_${item}_num"} );
+            },
+            url_list_sub   => sub { $self->$url_list_sub_name(@_); },
+            select_url_sub => sub {
+                my ($url_s) = @_;
+                $self->select_list_range( $url_s, $o{"min_${class}_page"},
+                    $o{"max_${class}_page"} );
+            },
+        );
+
+        return ( $title, $item_list );
+    };
+
+    return $items_sub;
+}
+
+sub get_query_ref {
+    my ( $self, $keyword, %o ) = @_;
+
+    my $items_sub = $self->get_items_sub( 'query', 'item' );
+
+    my ( $url, $post_data ) = $self->make_query_request( $keyword, %o );
+    
+    my ( $info, $item_list ) =
+      $items_sub->( $url, %o, post_data => $post_data, );
+    
+    $self->update_url_list($item_list, $url);
+
+    return ( $info, $item_list );
+} ## end sub get_tiezi_ref
+
+sub make_query_request { }
+sub parse_query  { 'Query' }
+sub parse_query_items  { }
+sub parse_query_urls  { }
+
+####-------------------------
+
+sub update_url_list {
+    my ( $self, $arr , $base_url) = @_;
+
+    my $i   = 0;
+    for my $chap (@$arr) {
+        $chap = { url => $chap || '' } if ( ref($chap) ne 'HASH' );
+        $self->format_abs_url( $chap, $base_url );
+
+        ++$i;
+        $chap->{pid} ||= $i;
+        $chap->{id}  ||= $i;
+    }
+    return $i;
+}
+
+sub is_list_overflow {
+    my ( $self, $r, $max ) = @_;
+
+    return unless ($max);
+
+    my $floor_num = scalar( @{$r} );
+    return if ( $floor_num < $max );
+
+    $#{$r} = $max - 1;
+    return 1;
+}
+
+sub select_list_range {
+    my ( $self, $src, $s_min, $s_max ) = @_;
+
+    my $id_sub = sub {
+        my ( $id, $default ) = @_;
+        return $id // $default if ( exists $src->[0]{id} );
+        return ( $id - 1 ) if ( $id and $id =~ /^\d+$/ );
+        return $default;
+    };
+
+    my $min = $id_sub->( $s_min, $src->[0]{id} // 0 );
+    my $max = $id_sub->( $s_max, $src->[-1]{id} // $#$src );
+
+    my @chap_list =
+      map { $src->[$_] }
+      grep {
+        my $j = $src->[$_]{id} // $_;
+        $j >= $min and $j <= $max
+      } ( 0 .. $#$src );
+
+    return \@chap_list;
+}
+
+sub update_floor_list {
+    my ( $self, $r, %o ) = @_;
+
+    my $flist = $r->{floor_list};
+
+    $flist = [ grep { $_->{word_num} >= $o{min_word_num} } @$flist ]
+      if ( $o{min_word_num} );
+
+    $flist = [ grep { $_->{writer} eq $r->{writer} } @$flist ]
+      if ( $o{only_poster} );
+
+    $r->{floor_list} = $flist;
+
+    return $self;
+}
+
+sub is_empty_chapter {
+    my ( $self, $chap_r ) = @_;
+    return if ( $chap_r and $chap_r->{content} );
+    return 1;
+}
+
+sub get_nth_chapter_list {
+    my ( $self, $index_ref, $n ) = @_;
+    my $r = $index_ref->{chapter_list}[ $n - 1 ];
+    return $r;
+}
+
+sub get_chapter_ids {
+    my ( $self, $index_ref, $o ) = @_;
+
+    my $chap_ids = $o->{chapter_ids} || [ 1 .. $index_ref->{chapter_num} ];
+
+    my @sort_chap_ids = sort { $a <=> $b } @$chap_ids;
+    return \@sort_chap_ids;
+}
+
+sub calc_content_wordnum {
+    my ( $self, $f ) = @_;
+    return if ( $f->{word_num} );
+    my $wd = $f->{content} || '';
+    $wd =~ s/<[^>]+>//gs;
+    $f->{word_num} = $wd =~ s/\S//gs;
+    return $f;
+}
+
+sub merge_hashref {
+    my ( $self, $h, $model ) = @_;
+    return unless ( ref($model) eq 'HASH' and ref($h) eq 'HASH' );
+    $h->{$_} ||= $model->{$_} for keys(%$model);
+    return $h;
+}
+
+sub tidy_chapter_content {
+    my ( $self, $r ) = @_;
+    for ( $r->{content} ) {
+        s/^\s*//s;
+        s#\s*([^><]+)(<br\s*/?>\s*){1,}#<p>$1</p>\n#g;
+        s#(\S+)$#<p>$1</p>#s;
+        s###g;
+
+        #s{<br\s*/?\s*>}{\n}sgi;
+        #s{<p\s+[^>]*>}{}sgi;
+        #s{<p\s*>}{}sgi;
+        #s{</p>}{\n\n}sgi;
+        #s{\n\n\n*}{\n\n}sg;
+        #s{\S.*?\n}{\n<p>$&</p>}sg;
+    }
+    return $r;
+}
 
 sub get_inner_html {
     my ( $self, $h ) = @_;
@@ -50,202 +373,31 @@ sub get_inner_html {
 } ## end sub get_inner_html
 
 sub format_abs_url {
-    my ( $self, $info_array_ref, $base_url ) = @_;
-    return unless ($info_array_ref);
+    my ( $self, $chap, $base_url ) = @_;
+    $base_url ||= $self->base_url();
+    return $chap if( ! $chap or $base_url!~/^http/ );
 
-    for my $r (@$info_array_ref) {
-        next unless ($r);
-
-        if ( ref($r) eq 'HASH' ) {
-            next unless ( $r->{url} );
-            $r->{url} = URI->new_abs( $r->{url}, $base_url )->as_string;
-        }
-        else {
-            $r = URI->new_abs( $r, $base_url )->as_string;
-        }
-    }
-}
-
-sub parse_index { }
-
-sub update_chapter_id {
-    my ( $self, $r ) = @_;
-    $r->{chapter_info} ||= [];
-
-    my $chap_i = $r->{chapter_info};
-    for my $i ( 0 .. $#$chap_i ) {
-        $chap_i->[$i]{id} ||= $i + 1;
-    }
-}
-
-sub update_chapter_num {
-    my ( $self, $r ) = @_;
-    $r->{chapter_info} ||= [];
-
-    my $chap_i = $r->{chapter_info};
-    $r->{chapter_num} = scalar(@$chap_i);
-}
-sub parse_chapter           { }
-sub parse_writer            { }
-sub make_query_request      { }
-sub parse_query             { }
-sub parse_query_result_urls { }
-
-sub get_book_ref {
-    my ( $self, $index_url, %opt ) = @_;
-    my $res = $self->get_index_ref( $index_url, %opt );
-
-    $opt{min_chapter} = $res->{chapter_info}[0]{id}
-      if ( $opt{min_chapter} !~ /\S/ );
-
-    $opt{max_chapter} = $res->{chapter_info}[-1]{id}
-      if ( $opt{max_chapter} !~ /\S/ );
-
-    my @infos =
-      grep { $_->{id} >= $opt{min_chapter} and $_->{id} <= $opt{max_chapter} }
-      @{ $res->{chapter_info} };
-
-    $res->{chapter_info} = $self->{browser}->request_urls(
-        \@infos,
-        %opt,
-        deal_sub => sub {
-            my ( $r, $chap ) = @_;
-            return { %$chap, %$r };
-        },
-        request_sub => sub {
-            my ($r) = @_;
-            return $self->get_chapter_ref( $r->{url} );
-        },
-    );
-    return $res;
-}
-
-sub get_index_ref {
-
-    my ( $self, $index_url, %opt ) = @_;
-
-    my $ref;
-    unless ( $index_url =~ /^http/ ) {
-        $ref = $self->parse_index($index_url);
-    }
-    else {
-        my $html_ref = $self->{browser}->request_url($index_url);
-
-        $ref = $self->parse_index($html_ref);
-        return unless ( defined $ref );
-
-        $ref->{index_url} = $index_url;
-        $ref->{site}      = $self->{site};
-
-        if ( exists $ref->{more_book_info} ) {
-            $self->format_abs_url( $ref->{more_book_info}, $ref->{index_url} );
-            for my $r ( @{ $ref->{more_book_info} } ) {
-                my $info = $self->{browser}->request_url( $r->{url} );
-                next unless ( defined $info );
-                $r->{function}->( $ref, $info );
-            }
-        }
+    if(ref($chap) eq 'HASH'){
+        $chap->{url} = URI->new_abs( $chap->{url}, $base_url )->as_string;
+    }else{
+        $chap =  URI->new_abs( $chap, $base_url )->as_string;
     }
 
-    $opt{index_sub}->($ref) if ( exists $opt{index_sub} );
+    return $chap;
+}
 
-    for my $k (qw/book writer/) {
-        $ref->{$k} = $self->format_string( $ref->{$k} );
+sub format_hashref_string {
+    my ( $self, $r, $k ) = @_;
+    $r->{$k} ||= '';
+
+    for ( $r->{$k} ) {
+        s/^\s+|\s+$//gs;
+        s/[\*\/\\\[\(\)]+//g;
+        s/[\]\s+]/-/g;
     }
-
-    $self->update_chapter_id($ref);
-    $self->update_chapter_num($ref);
-    $self->format_abs_url( $ref->{chapter_info}, $ref->{index_url} );
-
-    return $ref;
-} ## end sub get_index_ref
-
-sub format_string {
-    my ( $self, $s ) = @_;
-    $s =~ s/[\*\/\\\[\(\)]+//g;
-    $s =~ s/[\]\s+]/-/g;
-    $s;
+    $r;
 }
 
-sub get_chapter_ref {
-    my ( $self, $chap_url, %opt ) = @_;
-
-    my $html_ref = $self->{browser}->request_url($chap_url);
-    my $ref      = $self->parse_chapter($html_ref);
-
-    my $null_chapter_ref = {
-        content => '',
-        title   => '章节为空',
-        id      => $opt{id} || 1,
-    };
-    return $null_chapter_ref unless ($ref);
-
-    $ref->{content} =~ s#\s*([^><]+)(<br />\s*){1,}#<p>$1</p>\n#g;
-    $ref->{content} =~ s#(\S+)$#<p>$1</p>#s;
-    $ref->{content} =~ s###g;
-
-    $ref->{url} = $chap_url;
-    $ref->{id} //= $opt{id} unless ( exists $ref->{id} );
-
-    return $ref;
-} ## end sub get_chapter_ref
-
-sub get_writer_ref {
-    my ( $self, $writer_url ) = @_;
-
-    my $html_ref = $self->{browser}->request_url($writer_url);
-
-    my $writer_books = $self->parse_writer($html_ref);
-    $self->format_abs_url( $writer_books->{booklist}, $writer_url );
-
-    return $writer_books;
-} ## end sub get_writer_ref
-
-sub get_query_ref {
-    my ( $self, $type, $keyword ) = @_;
-
-    my ( $url, $post_vars ) = $self->make_query_request( $type, $keyword );
-    $url = encode( $self->charset, $url );
-    $post_vars->{$_} = encode( $self->charset, $post_vars->{$_} )
-      for keys(%$post_vars);
-
-    my $html_ref = $self->{browser}->request_url( $url, $post_vars );
-    return unless $html_ref;
-
-    my $result = $self->parse_query($html_ref);
-
-    my $result_urls_ref = $self->parse_query_result_urls($html_ref);
-    for my $url (@$result_urls_ref) {
-        my $h = $self->{browser}->request_url($url);
-        my $r = $self->parse_query($h);
-        push @$result, @$r;
-    }
-
-    $self->format_abs_url( $result, $url );
-
-    return $result;
-} ## end sub get_query_ref
-
-sub is_empty_chapter {
-    my ( $self, $chap_r ) = @_;
-    return if ( $chap_r and $chap_r->{content} );
-    return 1;
-}
-
-sub get_nth_chapter_info {
-    my ( $self, $index_ref, $n ) = @_;
-    my $r = $index_ref->{chapter_info}[ $n - 1 ];
-    return $r;
-}
-
-sub get_chapter_ids {
-    my ( $self, $index_ref, $o ) = @_;
-
-    my $chap_ids = $o->{chapter_ids} || [ 1 .. $index_ref->{chapter_num} ];
-
-    my @sort_chap_ids = sort { $a <=> $b } @$chap_ids;
-    return \@sort_chap_ids;
-}
 
 1;
 
