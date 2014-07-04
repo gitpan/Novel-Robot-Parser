@@ -4,7 +4,9 @@
 
 =head1 NAME
 
-L<Novel::Robot::Parser> 小说站点解析引擎
+L<Novel::Robot::Parser> get novel / bbs content from website
+
+小说站点解析引擎
 
 =head1 INIT
 

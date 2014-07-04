@@ -70,8 +70,6 @@ s#本帖尚未审核,若发布24小时后仍未审核通过会被屏蔽##s;
         $fl{title} = '';
         ( $fl{id} ) = $cell =~ m{№(\d+)</font>}s;
 
-        $self->calc_content_wordnum(\%fl);
-
         push @floor, \%fl;
     } ## end while ( $$h =~ ...)
 

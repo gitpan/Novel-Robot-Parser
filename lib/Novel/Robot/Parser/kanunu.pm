@@ -50,17 +50,16 @@ sub parse_index {
 
 sub parse_chapter {
 
-    my ( $self, $html_ref ) = @_;
+    my ( $self, $h ) = @_;
 
     my $parse_chapter = scraper {
         process_first '//td[@width="820"]', 'content' => 'HTML';
     };
-    my $ref = $parse_chapter->scrape($html_ref);
+    my $ref = $parse_chapter->scrape($h);
 
-    @{$ref}{qw/title book writer/} =
-      $$html_ref =~ m#<title>\s*(.+?)_(.+?)_\s*(.+?) 小说在线阅读#s;
+    ( $ref->{title} ) =
+      $$h =~ m#<title>\s*(.+?)_.+?_\s*.+? 小说在线阅读#s;
 
-    return unless ( defined $ref->{book} );
     return $ref;
 } ## end sub parse_chapter
 

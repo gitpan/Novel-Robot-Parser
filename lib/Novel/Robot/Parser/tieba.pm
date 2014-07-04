@@ -7,7 +7,6 @@ use utf8;
 use base 'Novel::Robot::Parser';
 
 use HTML::Entities;
-use JSON;
 use Web::Scraper;
 
 sub base_url { 'http://tieba.baidu.com'; }
@@ -21,7 +20,6 @@ sub parse_tiezi {
     my $parse_query = scraper {
         process_first '//h1',                        'title'  => 'TEXT';
         process_first '//li[@class="d_name"]',       'writer' => 'TEXT';
-        #process_first '//div[contains(@class,"l_post ")]' , 'info' => '@data-field';
     };
     my $ref = $parse_query->scrape($h);
     
@@ -32,7 +30,6 @@ sub parse_tiezi_floors {
     my ( $self, $h ) = @_;
 
     my $parse_query = scraper {
-        #process '//div[@id="j_p_postlist"]//div[contains(@class,"l_post ")]', 
         process '//div[contains(@class,"l_post ")]', 
         'floors[]' => scraper {
             process '.' , 'info' => '@data-field';
@@ -44,8 +41,6 @@ sub parse_tiezi_floors {
     my $ref    = $parse_query->scrape($h);
 
     my @floors ;
-my        $json = JSON->new->allow_nonref;
-
     for my $f (@{ $ref->{floors} }){
         next unless($f->{content});
         $self->parse_floor_info($f);
@@ -57,14 +52,13 @@ my        $json = JSON->new->allow_nonref;
 sub parse_floor_info {
     my ($self, $f) = @_;
     $f->{writer} ||= 'unknown';
-    #$f->{content} =~ s/<img[^>]*>//sgi;
-
     return unless($f->{info});
+
     my $x = decode_entities($f->{info});
     ($f->{id}) = $x=~/"post_no":(\d+),/s;
     ($f->{time}) = $x=~/"date":"(.+?)",/s;
     delete($f->{info});
-    return $self;
+    return $f;
 }
 
 sub parse_tiezi_urls {

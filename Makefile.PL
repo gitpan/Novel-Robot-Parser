@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker 6.30;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "get novel content from website \345\260\217\350\257\264\347\253\231\347\202\271\350\247\243\346\236\220\345\274\225\346\223\216",
+  "ABSTRACT" => "get novel / bbs content from website",
   "AUTHOR" => "Abby Pan <abbypan\@gmail.com>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -27,7 +27,7 @@ my %WriteMakefileArgs = (
     "URI" => 0,
     "Web::Scraper" => 0
   },
-  "VERSION" => "0.19",
+  "VERSION" => "0.20",
   "test" => {
     "TESTS" => ""
   }

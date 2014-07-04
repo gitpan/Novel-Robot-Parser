@@ -1,10 +1,10 @@
-# ABSTRACT: get novel content from website 小说站点解析引擎
+# ABSTRACT: get novel / bbs content from website
 package  Novel::Robot::Parser;
 use Novel::Robot::Browser;
 use URI;
 use Encode;
 
-our $VERSION    = 0.19;
+our $VERSION    = 0.20;
 
 our %NULL_INDEX = (
     url          => '',
@@ -269,7 +269,7 @@ sub select_list_range {
 
     my $id_sub = sub {
         my ( $id, $default ) = @_;
-        return $id // $default if ( exists $src->[0]{id} );
+        return $id=~/\S/ ? $id : $default if ( exists $src->[0]{id} );
         return ( $id - 1 ) if ( $id and $id =~ /^\d+$/ );
         return $default;
     };
@@ -292,8 +292,10 @@ sub update_floor_list {
 
     my $flist = $r->{floor_list};
 
-    $flist = [ grep { $_->{word_num} >= $o{min_word_num} } @$flist ]
-      if ( $o{min_word_num} );
+    $self->calc_content_word_num($_) for @$flist;
+
+    $flist = [ grep { $_->{word_num} >= $o{min_floor_word_num} } @$flist ]
+      if ( $o{min_floor_word_num} );
 
     $flist = [ grep { $_->{writer} eq $r->{writer} } @$flist ]
       if ( $o{only_poster} );
@@ -324,7 +326,7 @@ sub get_chapter_ids {
     return \@sort_chap_ids;
 }
 
-sub calc_content_wordnum {
+sub calc_content_word_num {
     my ( $self, $f ) = @_;
     return if ( $f->{word_num} );
     my $wd = $f->{content} || '';
