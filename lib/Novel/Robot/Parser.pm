@@ -4,7 +4,7 @@ use Novel::Robot::Browser;
 use URI;
 use Encode;
 
-our $VERSION    = 0.20;
+our $VERSION    = 0.21;
 
 our %NULL_INDEX = (
     url          => '',
@@ -53,16 +53,18 @@ sub detect_site {
     return $url unless ( $url =~ /^http/ );
 
     my $site =
-        ( $url =~ m#^http://www\.jjwxc\.net/# )   ? 'jjwxc'
-      : ( $url =~ m#^http://www\.dddbbb\.net/# )  ? 'dddbbb'
-      : ( $url =~ m#^http://www\.shunong\.com/# ) ? 'shunong'
-      : ( $url =~ m#^http://book\.kanunu\.org/# ) ? 'kanunu'
-      : ( $url =~ m#^http://www\.23hh\.com/# )    ? 'asxs'
+        ( $url =~ m#^\Qhttp://www.jjwxc.net/# )   ? 'jjwxc'
+      : ( $url =~ m#^\Qhttp://www.dddbbb.net/# )  ? 'dddbbb'
+      : ( $url =~ m#^\Qhttp://www.shunong.com/# ) ? 'shunong'
+      : ( $url =~ m#^\Qhttp://book.kanunu.org/# ) ? 'kanunu'
+      : ( $url =~ m#^\Qhttp://www.23hh.com/# )    ? 'asxs'
+      : ( $url =~ m#^\Qhttp://www.day66.com/# ) ? 'day66'
+      : ( $url =~ m#^\Qhttp://www.1kanshu.com/# ) ? 'kanshu'
       : ( $url =~ m#^\Qhttp://www.luoqiu.com/# )  ? 'luoqiu'
       : ( $url =~ m#^\Qhttp://www.23us.com/# )    ? 'dingdian'
       : ( $url =~ m#^\Qhttp://read.qidian.com/# ) ? 'qidian'
       : ( $url =~ m#^\Qhttp://www.snwx.com/# )    ? 'snwx'
-      : ( $url =~ m#^http://bbs\.jjwxc\.net/# )   ? 'hjj'
+      : ( $url =~ m#^\Qhttp://bbs.jjwxc.net/# )   ? 'hjj'
       : ( $url =~ m#^\Qhttp://tieba.baidu.com/# ) ? 'tieba'
       :                                             'unknown';
 

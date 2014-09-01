@@ -19,4 +19,6 @@ requires:
   Novel::Robot::Browser: '0'
   URI: '0'
   Web::Scraper: '0'
-version: '0.20'
+resources:
+  repository: https://github.com/abbypan/Novel-Robot-Parser.git
+version: '0.21'
